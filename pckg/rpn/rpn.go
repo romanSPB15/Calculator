@@ -40,43 +40,51 @@ func isSign(value rune) bool {
 var Errorexp = errors.New("Expression is not valid")
 var Errordel = errors.New("/0!")
 
-func Calc(expression string) (float64, error) {
+func Calc(expression string) (res float64, err0 error) {
 	if len(expression) < 3 {
 		return 0, Errorexp
 	}
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
-	var res float64
-	var b string
-	var c rune = 0
-	var resflag bool = false
-	var isc int
-	var countc int = 0
-	//////////////////////////////////////////////////////////////////////////////////////////////////////
-	for _, value := range expression {
-		if isSign(value) {
-			countc++
-		}
-	}
+	b := ""
+	c := rune(0)
+	resflag := false
+	isc := -1
+	scc := 0
 	//////////////////////////////////////////////////////////////////////////////////////////////////////
 	if isSign(rune(expression[0])) || isSign(rune(expression[len(expression)-1])) {
 		return 0, Errorexp
 	}
-	for i, value := range expression {
+	for i := 0; i < len(expression); i++ {
+		value := expression[i]
 		if value == '(' {
-			isc = i
+			if scc == 0 {
+				isc = i
+			}
+			scc++
+
 		}
 		if value == ')' {
-			calc, err := Calc(expression[isc+1 : i])
-			if err != nil {
-				return 0, err
+			scc--
+			if scc == 0 {
+				exp := expression[isc+1 : i]
+				calc, err := Calc(exp)
+				if err != nil {
+					return 0, err
+				}
+				calcstr := strconv.FormatFloat(calc, 'f', 0, 64)
+				expression = strings.Replace(expression, expression[isc:i+1], calcstr, 1) // Меняем скобки на результат выражения в них
+
+				i -= len(exp)
+				isc = -1
 			}
-			calcstr := strconv.FormatFloat(calc, 'f', 0, 64)
-			i2 := i
-			i -= len(expression[isc:i+1]) - len(calcstr)
-			expression = strings.Replace(expression, expression[isc:i2+1], calcstr, 1) // Меняем скобки на результат выражения в них
 		}
 	}
-	if countc > 1 {
+	if isc != -1 {
+		return 0, Errorexp
+	}
+	priority := strings.ContainsRune(expression, '*') || strings.ContainsRune(expression, '/')
+	notpriority := strings.ContainsRune(expression, '+') || strings.ContainsRune(expression, '-')
+	if priority && notpriority {
 		for i := 1; i < len(expression); i++ {
 			value := rune(expression[i])
 			///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,7 +113,7 @@ func Calc(expression string) (float64, error) {
 					return 0, err
 				}
 				calcstr := strconv.FormatFloat(calc, 'f', 0, 64)
-				i -= len(expression[isc:i+1]) - len(calcstr) - 1
+				i -= len(expression[isc-1:i+1]) - len(calcstr) - 1
 				expression = strings.Replace(expression, expression[imin:imax], calcstr, 1) // Меняем скобки на результат выражения в них
 			}
 			if value == '+' || value == '-' || value == '*' || value == '/' {
@@ -139,7 +147,7 @@ func Calc(expression string) (float64, error) {
 				resflag = true
 				res = stringToFloat64(b)
 			}
-			b = strings.ReplaceAll(b, b, "")
+			b = ""
 			c = value
 
 			/////////////////////////////////////////////////////////////////////////////////////////////
