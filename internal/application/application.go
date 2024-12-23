@@ -8,12 +8,6 @@ import (
 	"github.com/romanSPB15/Calculator/pckg/rpn"
 )
 
-type Application struct{}
-
-func NewApplication() *Application {
-	return &Application{}
-}
-
 func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	data := make([]byte, 100)
 	defer r.Body.Close()
@@ -52,6 +46,13 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(500)
 	}
+}
+
+type Application struct{}
+
+func NewApplication() *Application {
+	http.HandleFunc("/api/v1/calculate", CalcHandler)
+	return &Application{}
 }
 
 func (a *Application) Start_Server(port string) {
