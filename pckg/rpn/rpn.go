@@ -54,28 +54,29 @@ func Calc(expression string) (res float64, err0 error) {
 	if isSign(rune(expression[0])) || isSign(rune(expression[len(expression)-1])) {
 		return 0, Errorexp
 	}
-	for i := 0; i < len(expression); i++ {
-		value := expression[i]
-		if value == '(' {
-			if scc == 0 {
-				isc = i
-			}
-			scc++
-
-		}
-		if value == ')' {
-			scc--
-			if scc == 0 {
-				exp := expression[isc+1 : i]
-				calc, err := Calc(exp)
-				if err != nil {
-					return 0, err
+	if strings.Contains(expression, "(") || strings.Contains(expression, ")") {
+		for i := 0; i < len(expression); i++ {
+			value := expression[i]
+			if value == '(' {
+				if scc == 0 {
+					isc = i
 				}
-				calcstr := strconv.FormatFloat(calc, 'f', 0, 64)
-				expression = strings.Replace(expression, expression[isc:i+1], calcstr, 1) // Меняем скобки на результат выражения в них
+				scc++
+			}
+			if value == ')' {
+				scc--
+				if scc == 0 {
+					exp := expression[isc+1 : i]
+					calc, err := Calc(exp)
+					if err != nil {
+						return 0, err
+					}
+					calcstr := strconv.FormatFloat(calc, 'f', 0, 64)
+					expression = strings.Replace(expression, expression[isc:i+1], calcstr, 1) // Меняем скобки на результат выражения в них
 
-				i -= len(exp)
-				isc = -1
+					i -= len(exp)
+					isc = -1
+				}
 			}
 		}
 	}
@@ -97,7 +98,7 @@ func Calc(expression string) (res float64, err0 error) {
 					}
 					imin++
 				}
-				var imax int = i + 1
+				imax := i + 1
 				if imax == len(expression) {
 					imax--
 				} else {
@@ -108,13 +109,14 @@ func Calc(expression string) (res float64, err0 error) {
 				if imax == len(expression)-1 {
 					imax++
 				}
-				calc, err := Calc(expression[imin:imax])
+				exp := expression[imin:imax]
+				calc, err := Calc(exp)
 				if err != nil {
 					return 0, err
 				}
 				calcstr := strconv.FormatFloat(calc, 'f', 0, 64)
-				i -= len(expression[isc-1:i+1]) - len(calcstr) - 1
 				expression = strings.Replace(expression, expression[imin:imax], calcstr, 1) // Меняем скобки на результат выражения в них
+				i -= len(exp) - 1
 			}
 			if value == '+' || value == '-' || value == '*' || value == '/' {
 				c = value
