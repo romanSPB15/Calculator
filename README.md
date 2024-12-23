@@ -10,7 +10,7 @@
     "expression": "выражение, которое ввёл пользователь"
 }
 ```
-В ответ пользователь получает HTTP-ответ с телом:https://github.com/romanSPB15/Calculator/blob/master/README.md
+В ответ пользователь получает HTTP-ответ с телом:
 ```bash
 {
     "result": "результат выражения"
