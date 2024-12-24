@@ -9,21 +9,19 @@ import (
 )
 
 func CalcHandler(w http.ResponseWriter, r *http.Request) {
-	data := make([]byte, 100)
 	defer r.Body.Close()
-	n, err := r.Body.Read(data)
+	if r.Method != http.MethodPost {
+		w.WriteHeader(500)
+		return
+	}
+	var req map[string]string
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		w.WriteHeader(500)
 		return
 	}
-	data = data[:n]
-	var expstruct struct {
-		Expession string
-	}
-	err = json.Unmarshal(data, &expstruct)
-
+	result, err := rpn.Calc(req["expression"])
 	var code []byte
-	result, err := rpn.Calc(expstruct.Expession)
 	if err == nil {
 		var structres struct {
 			Result float64 `json:"result"`
@@ -55,7 +53,7 @@ func NewApplication() *Application {
 	return &Application{}
 }
 
-func (a *Application) Start_Server(port string) {
+func (a *Application) RunServer() error {
 	http.HandleFunc("/api/calc", CalcHandler)
-	http.ListenAndServe(port, nil)
+	return http.ListenAndServe(":80", nil)
 }
