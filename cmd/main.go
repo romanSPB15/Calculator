@@ -1,10 +1,16 @@
 package main
 
-import app "github.com/romanSPB15/Calculator/internal/application"
+import (
+	"log"
+
+	app "github.com/romanSPB15/Calculator/internal/application"
+)
 
 const port = ":80"
 
 func main() {
-	app := app.NewApplication()
-	app.Start_Server(port)
+	err := app.NewApplication().RunServer()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
