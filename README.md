@@ -55,7 +55,7 @@ go run ./cmd/main.go
 
 Если речь идет о работе с сервисом через `Postman`, то необходимо зайти на страницу с отправкой запросов и выбрать тип запроса `POST`. В поле с вводом `URL` необходимо прописать:
 ```bash
-http://127.0.0.1:8080/api/v1/calculate
+http://127.0.0.1:80/api/v1/calculate
 ```
 и для создания тела запроса следует перейти в `Body` -> `raw`, и в поле для написания тела запроса написать данные в JSON формате. Например:
 ```bash
@@ -67,7 +67,7 @@ http://127.0.0.1:8080/api/v1/calculate
 
 Можно воспользоваться и другим вариантом - командной строкой. Если у вас Windows, то рекомендую использовать `Git Bash`. Через терминал мы можем реализовывать запросы через `curl`. Например:
 ```bash
-curl --location 'localhost/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
   "expression": "2+2*2"
@@ -79,7 +79,7 @@ curl --location 'localhost/api/v1/calculate' \
 Если пользователь введет корректный запрос с корректно написанным арифметическим выражением, то он получит верный ответ.
 При вводе данного запроса:
 ```bash
-curl --location 'localhost:8080/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": "2+2*2"
@@ -93,7 +93,7 @@ curl --location 'localhost:8080/api/v1/calculate' \
 
 Далее рассмотрим пример с использованием скобок и отрицательных чисел. При вводе запроса:
 ```bash
-curl --location 'localhost:8080/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": "-2*(3-1)+8"
@@ -107,7 +107,7 @@ curl --location 'localhost:8080/api/v1/calculate' \
 
 При делении на 0 пользователю выводится ошибка. При вводе запроса:
 ```bash
-curl --location 'localhost:8080/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": "4/0"
@@ -117,7 +117,7 @@ curl --location 'localhost:8080/api/v1/calculate' \
 
 При вводе запроса:
 ```bash
-curl --location 'localhost:8080/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": "as"
@@ -131,7 +131,7 @@ curl --location 'localhost:8080/api/v1/calculate' \
 
 При нарушении самого запроса также будет выведена ошибка. При вводе запроса:
 ```bash
-curl --location 'localhost:8080/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": "as
@@ -145,7 +145,7 @@ curl --location 'localhost:8080/api/v1/calculate' \
 
 Если же запрос не POST, а какой-либо другой, то опять же выводится ошибка. Например, при вводе запроса:
 ```bash
-curl --location --request GET 'localhost:8080/api/v1/calculate' \
+curl --location --request GET 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": "as"
@@ -159,7 +159,7 @@ curl --location --request GET 'localhost:8080/api/v1/calculate' \
 
 Следует так же уточнить, что на пустое арифметическое выражение программа так же будет отвечать ошибкой. Например, на запрос:
 ```bash
-curl --location 'localhost:8080/api/v1/calculate' \
+curl --location 'localhost:80/api/v1/calculate' \
 --header 'Content-Type: application/json' \
 --data '{
     "expression": ""
