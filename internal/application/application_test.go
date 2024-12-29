@@ -11,7 +11,7 @@ import (
 )
 
 func TestCalcHandler(t *testing.T) {
-	r := strings.NewReader("{\"expession\": \"(2+3-1)/2*5\"}")
+	r := strings.NewReader("{\"expression\": \"(2+3-1)/2*5\"}")
 	req, err := http.NewRequest("POST", "/api/calc", r)
 	if err != nil {
 		t.Fatal(err)
@@ -30,7 +30,7 @@ func TestCalcHandler(t *testing.T) {
 	if code := res.StatusCode; code != 200 {
 		t.Fatal("incorrect code", code, "expect 200")
 	}
-	r = strings.NewReader("{\"expession\": \"(2+3-;.1/w*a\"}")
+	r = strings.NewReader("{\"expression\": \"(2+3-;.1/w*a\"}")
 	req, err = http.NewRequest("POST", "/api/calc", r)
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +49,7 @@ func TestCalcHandler(t *testing.T) {
 	if code := res.StatusCode; code != 422 {
 		t.Fatal("incorrect code", code, "expect 422")
 	}
-	r = strings.NewReader("{\"expession\": \"(2+3-;.1/w*a\"}")
+	r = strings.NewReader("{\"expression\": \"(2+3-;.1/w*a\"}")
 	req, err = http.NewRequest("POST", "/api/calc", r)
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +68,7 @@ func TestCalcHandler(t *testing.T) {
 	if code := res.StatusCode; code != 422 {
 		t.Fatal("incorrect code", code, "expect 422")
 	}
-	r = strings.NewReader("{\"expession\": \"10+10/0\"}")
+	r = strings.NewReader("{\"expression\": \"10+10/0\"}")
 	req, err = http.NewRequest("POST", "/api/calc", r)
 	if err != nil {
 		t.Fatal(err)
