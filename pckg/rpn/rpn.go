@@ -93,7 +93,12 @@ func Calc(expression string) (res float64, err0 error) {
 			if value == '*' || value == '/' {
 				var imin int = i - 1
 				if imin != 0 {
-					for !isSign(rune(expression[imin])) && imin > 0 {
+					for imin >= 0 {
+						if imin >= 0 {
+							if isSign(rune(expression[imin])) {
+								break
+							}
+						}
 						imin--
 					}
 					imin++
