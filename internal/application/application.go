@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/romanSPB15/Calculator/pckg/rpn"
+	"github.com/romanSPB15/Calculator_Service/pckg/rpn"
 )
 
 func CalcHandler(w http.ResponseWriter, r *http.Request) {

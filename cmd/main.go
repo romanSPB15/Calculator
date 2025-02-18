@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	app "github.com/romanSPB15/Calculator/internal/application"
+	app "github.com/romanSPB15/Calculator_Service/internal/application"
 )
 
 const port = ":80"

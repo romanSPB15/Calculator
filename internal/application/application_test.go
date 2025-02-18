@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	app "github.com/romanSPB15/Calculator/internal/application"
+	app "github.com/romanSPB15/Calculator_Service/internal/application"
 )
 
 func TestCalcHandler(t *testing.T) {
