@@ -1,16 +1,21 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"net/http"
+	"strings"
 
-	app "github.com/romanSPB15/Calculator_Service/internal/application"
+	"github.com/romanSPB15/Calculator_Service/internal/application"
 )
 
-const port = ":80"
-
 func main() {
-	err := app.NewApplication().RunServer()
-	if err != nil {
-		log.Fatal(err)
+	go func() {
+		a := application.New()
+		a.RunServer()
+	}()
+	TestClient := http.Client{}
+	resp, err := TestClient.Post("http://localhost/api/v1/calculate", "application/json", strings.NewReader(`{"expression": "2+2"}`))
+	fmt.Println(resp, err)
+	for {
 	}
 }

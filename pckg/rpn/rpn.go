@@ -2,33 +2,126 @@ package rpn
 
 import (
 	"errors"
+	"log"
+	"os"
 	"strconv"
 	"strings"
+	"sync"
+
+	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 )
 
-func stringToFloat64(str string) (res float64) {
-	degree := float64(1)
-	if strings.ContainsRune(str, '.') {
-		drob := 0.00
-		i := len(str) - 1
-		for ; str[i] != '.'; i-- {
-			drob += float64(9-int('9'-str[i])) * degree
-			degree *= 10
-		}
-		degree = 1
-		for ; i > 0; i-- {
-			res += float64(9-int('9'-str[i-1])) * degree
-			degree *= 10
-		}
-		for drob > 1 {
-			drob /= 10
-		}
-		res += drob
-	} else {
-		for i := len(str); i > 0; i-- {
-			res += float64(9-int('9'-str[i-1])) * degree
-			degree *= 10
-		}
+var (
+	TIME_ADDITION_MS        int
+	TIME_SUBTRACTION_MS     int
+	TIME_MULTIPLICATIONS_MS int
+	TIME_DIVISIONS_MS       int
+	COMPUTING_POWER         int
+)
+
+// Считывание переменной среды в виде числа
+func getIntEnv(key string) int {
+	str, has := os.LookupEnv(key)
+	if !has {
+		log.Panicf("System has not %s", key)
+	}
+	res, err := strconv.Atoi(str)
+	if err != nil {
+		log.Panicf("Env %s is not int", key)
+	}
+	return res
+}
+
+// Иницилизация переменных Go из файла .env
+func InitEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+	TIME_ADDITION_MS = getIntEnv("TIME_ADDITION_MS")
+	TIME_SUBTRACTION_MS = getIntEnv("TIME_SUBTRACTION_MS")
+	TIME_MULTIPLICATIONS_MS = getIntEnv("TIME_MULTIPLICATIONS_MS")
+	TIME_DIVISIONS_MS = getIntEnv("TIME_DIVISIONS_MS")
+	COMPUTING_POWER = getIntEnv("COMPUTING_POWER")
+}
+
+type (
+	TaskArg1Type   = float64
+	TaskArg2Type   = float64
+	TaskResultType = float64
+)
+
+type ExpressionResultType = float64
+
+// Задача
+type Task struct {
+	Arg1          TaskArg1Type   `json:"arg1"`
+	Arg2          TaskArg2Type   `json:"arg2"`
+	Operation     string         `json:"operation"`
+	OperationTime int            `json:"operation_time"`
+	Status        string         `json:"-"`
+	Result        TaskResultType `json:"-"`
+}
+
+// Мап задач
+type TaskMap = map[IDTask]*Task
+
+// Конкурентный мап задач
+type ConcurrentTaskMap struct {
+	m  TaskMap
+	mx sync.Mutex
+}
+
+// Новый конкурентный мап задач
+func NewConcurrentTaskMap() *ConcurrentTaskMap {
+	return &ConcurrentTaskMap{make(map[IDTask]*Task), sync.Mutex{}}
+}
+
+// Получение ссылки на задачу.
+// Если такого значения нет, то оно добавляется само.
+func (cm *ConcurrentTaskMap) Get(id IDTask) *Task {
+	cm.mx.Lock()
+	res, ok := cm.m[id]
+	if ok == false {
+		t := &Task{}
+		cm.m[id] = t
+		cm.mx.Unlock()
+		return t
+	}
+	cm.mx.Unlock()
+	return res
+}
+
+// Получение простого мапа
+func (cm *ConcurrentTaskMap) Map() *map[IDTask]*Task {
+	return &cm.m
+}
+
+// Задача с ID
+type TaskID struct {
+	ID IDTask `json:"id"`
+	Task
+}
+
+func (t *Task) Run() (res float64) {
+	switch t.Operation {
+	case "+":
+		res = t.Arg1 + t.Arg2
+	case "-":
+		res = t.Arg1 - t.Arg2
+	case "*":
+		res = t.Arg1 * t.Arg2
+	case "/":
+		res = t.Arg1 / t.Arg2
+	}
+	return
+}
+
+func convertString(str string) float64 {
+	res, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		panic(err)
 	}
 	return res
 }
@@ -37,10 +130,12 @@ func isSign(value rune) bool {
 	return value == '+' || value == '-' || value == '*' || value == '/'
 }
 
+type IDTask = uint32
+
 var Errorexp = errors.New("Expression is not valid")
 var Errordel = errors.New("/0!")
 
-func Calc(expression string) (res float64, err0 error) {
+func Calc(expression string, tasks *ConcurrentTaskMap, newID chan IDTask) (res ExpressionResultType, err0 error) {
 	if len(expression) < 3 {
 		return 0, Errorexp
 	}
@@ -67,7 +162,7 @@ func Calc(expression string) (res float64, err0 error) {
 				scc--
 				if scc == 0 {
 					exp := expression[isc+1 : i]
-					calc, err := Calc(exp)
+					calc, err := Calc(exp, tasks, newID)
 					if err != nil {
 						return 0, err
 					}
@@ -115,7 +210,7 @@ func Calc(expression string) (res float64, err0 error) {
 					imax++
 				}
 				exp := expression[imin:imax]
-				calc, err := Calc(exp)
+				calc, err := Calc(exp, tasks, newID)
 				if err != nil {
 					return 0, err
 				}
@@ -139,20 +234,77 @@ func Calc(expression string) (res float64, err0 error) {
 			if resflag {
 				switch c {
 				case '+':
-					res += stringToFloat64(b)
-				case '-':
-					res -= stringToFloat64(b)
-				case '*':
-					res *= stringToFloat64(b)
-				case '/':
-					if b == "0" {
-						return 0, Errordel
+					uuid := uuid.New()
+					id := uuid.ID()
+					t := Task{
+						Arg1:          res,
+						Arg2:          convertString(b),
+						Operation:     "+",
+						OperationTime: TIME_ADDITION_MS,
 					}
-					res /= stringToFloat64(b)
+					log.Println("New Task With ID", id)
+					*tasks.Get(id) = t // Записываем задачу
+					status := &t.Status
+					newID <- id
+					for *status != "OK" {
+					}
+					log.Printf("m[%d].Status = \"OK\"", id)
+					res = t.Result
+				case '-':
+					uuid := uuid.New()
+					id := uuid.ID()
+					t := Task{
+						Arg1:          res,
+						Arg2:          convertString(b),
+						Operation:     "-",
+						OperationTime: TIME_SUBTRACTION_MS,
+					}
+					log.Println("rpn.Calc: Create New Task With ID", id)
+					*tasks.Get(id) = t // Записываем задачу
+					status := &t.Status
+					newID <- id
+					for *status != "OK" {
+					}
+					log.Printf("m[%d].Status = \"OK\"", id)
+					res = t.Result
+				case '*':
+					uuid := uuid.New()
+					id := uuid.ID()
+					t := Task{
+						Arg1:          res,
+						Arg2:          convertString(b),
+						Operation:     "*",
+						OperationTime: TIME_MULTIPLICATIONS_MS,
+					}
+					log.Println("rpn.Calc: Create New Task With ID", id)
+					*tasks.Get(id) = t // Записываем задачу
+					status := &t.Status
+					newID <- id
+					for *status != "OK" {
+					}
+					log.Printf("m[%d].Status = \"OK\"", id)
+					res = t.Result
+				case '/':
+					uuid := uuid.New()
+					id := uuid.ID()
+					t := Task{
+						Arg1:          res,
+						Arg2:          convertString(b),
+						Operation:     "/",
+						OperationTime: TIME_DIVISIONS_MS,
+					}
+					log.Println("rpn.Calc: Create New Task With ID", id)
+					*tasks.Get(id) = t // Записываем задачу
+					status := &t.Status
+					newID <- id
+					for *status != "OK" {
+					}
+					log.Printf("m[%d].Status = \"OK\"", id)
+					res = t.Result
 				}
 			} else {
 				resflag = true
-				res = stringToFloat64(b)
+				res = convertString(b)
 			}
 			b = ""
 			c = value
